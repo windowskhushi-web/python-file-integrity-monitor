@@ -7,19 +7,11 @@ from src.hash_generator import calculate_sha256
 
 
 def create_baseline(monitored_directory, baseline_file):
-    """
-    Generate and save SHA-256 hashes for monitored files.
-
-    Args:
-        monitored_directory: Directory containing files to monitor.
-        baseline_file: Destination JSON file for the baseline.
-
-    Returns:
-        Dictionary containing file paths and their SHA-256 hashes.
-    """
+    """Generate and save SHA-256 hashes for monitored files."""
 
     files = scan_directory(monitored_directory)
     baseline = {}
+    errors = []
 
     for file_path in files:
         try:
@@ -32,7 +24,15 @@ def create_baseline(monitored_directory, baseline_file):
             baseline[str(relative_path)] = file_hash
 
         except OSError as error:
+            errors.append(str(file_path))
             print(f"Could not read {file_path}: {error}")
+
+    if errors:
+        raise OSError(
+            f"Baseline creation incomplete. "
+            f"{len(errors)} file(s) could not be read. "
+            "Existing baseline was not overwritten."
+        )
 
     baseline_path = Path(baseline_file)
     baseline_path.parent.mkdir(parents=True, exist_ok=True)
